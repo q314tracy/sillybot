@@ -65,32 +65,12 @@ public class Robot extends TimedRobot {
     ctrl_driver = new XboxController(0);
     ctrl_operator = new XboxController(1);
 
-    //kinematic params, converts inches to meters
+    //kinematic params
     obj_kinematics = new DifferentialDriveKinematics(cnst_trackwidth);
   }
 
   @Override
   public void robotPeriodic() {
-
-    //transformations for axis data and buttons go here to make them persistent throughout robot function, data is then consumed in different overrides as needed
-
-    //axis transformations, use right trigger axis to limit X axis speed for finer control, perform kinematics math using passed transformed axis data
-    var_xaxis = -MathUtil.applyDeadband(ctrl_driver.getRightY(), cnst_ctrldeadband) * var_throttle;
-    var_zaxis = -MathUtil.applyDeadband(ctrl_driver.getRightX(), cnst_ctrldeadband);
-    var_throttle = 1 - MathUtil.applyDeadband(ctrl_driver.getRightTriggerAxis(), cnst_ctrldeadband);
-    var_wheelspeeds = obj_kinematics.toWheelSpeeds(new ChassisSpeeds(var_xaxis, 0, var_zaxis));
-
-    //bools for shooter operation
-    var_operator_a = ctrl_operator.getAButton();
-    var_operator_b = ctrl_operator.getBButton();
-
-    //shooter speed conditional, conditionals for each button must be nested, as mutiple separate else statements writing zero will not allow consistent movement
-    if (var_operator_a || var_operator_b) {
-      if (var_operator_a && var_operator_b == false) {var_shootspeed = 1;}
-      if (var_operator_a == false && var_operator_b) {var_shootspeed = -1;}
-    } else {
-      var_shootspeed = 0;
-    }
 
     //telemetry
     SmartDashboard.putNumber("x axis", var_xaxis);
@@ -114,7 +94,23 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopPeriodic() {
 
-    //data consumed by motors in teleop to operate robot
+    //axis transformations, consume and perform kinematics math using transformed axis data
+    var_xaxis = -MathUtil.applyDeadband(ctrl_driver.getRightY(), cnst_ctrldeadband) * var_throttle; //use throttle to limit speed for finer control
+    var_zaxis = -MathUtil.applyDeadband(ctrl_driver.getRightX(), cnst_ctrldeadband);
+    var_throttle = 1 - MathUtil.applyDeadband(ctrl_driver.getRightTriggerAxis(), cnst_ctrldeadband); //subtract axis data from axis maximum to invert scale of axis
+    var_wheelspeeds = obj_kinematics.toWheelSpeeds(new ChassisSpeeds(var_xaxis, 0, var_zaxis));
+
+    //bools for shooter operation
+    var_operator_a = ctrl_operator.getAButton();
+    var_operator_b = ctrl_operator.getBButton();
+
+    //shooter speed conditional, conditionals for each button must be nested, as mutiple separate else statements writing zero will not allow consistent movement
+    if (var_operator_a || var_operator_b) {
+      if (var_operator_a && var_operator_b == false) {var_shootspeed = 1;}
+      if (var_operator_a == false && var_operator_b) {var_shootspeed = -1;}
+    } else {
+      var_shootspeed = 0;
+    }
 
     //write speeds to motors
     m_frontleft.set(var_wheelspeeds.leftMetersPerSecond);
